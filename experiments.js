@@ -6,6 +6,9 @@ var { ExtensionSupport } = ChromeUtils.import(
     "resource:///modules/ExtensionSupport.jsm");
 var { ExtensionParent } = ChromeUtils.import(
     "resource://gre/modules/ExtensionParent.jsm");
+    var { SessionStoreManager } = ChromeUtils.import(
+        "resource:///modules/SessionStoreManager.jsm"
+      );
 
 const EXTENSION_NAME = "DontRestoreTabsRevival@nuitcodecitoyen.org";
 var extension = ExtensionParent.GlobalManager.getExtension(EXTENSION_NAME);
@@ -62,10 +65,26 @@ function paint(win) {
     win.location == "chrome://messenger/content/messenger.xhtml") {
         win.setTimeout(function () {
         try {
-          win.atStartupRestoreTabs = function (aDontRestoreFirstTab) {
-            return false;
-          };
+            win.atStartupRestoreTabs = async function(aDontRestoreFirstTab) {
+                let state = await SessionStoreManager.loadingWindow(win);
+                if (state) {
+                  let tabsState = state.tabs;
+
+                  // Either we can chose not to open the message tabs, or close all tabs.
+                //   let tabsStateTabsNoMFessages = tabsState.tabs.filter(tab => tab.mode != "message");
+                  tabsState.tabs = [];
+                    let tabmail = win.document.getElementById("tabmail");
+                    tabmail.restoreTabs(tabsState, aDontRestoreFirstTab);
+                }
+
+                // it's now safe to load extra Tabs.
+                Services.tm.dispatchToMainThread(win.loadExtraTabs);
+                SessionStoreManager._restored = true;
+                Services.obs.notifyObservers(win, "mail-tabs-session-restored");
+                return !!state;
+              }
         } catch (e) {
+            console.log("Components.utils.reportError(e);");
           Components.utils.reportError(e);
         }
       }, 10);
