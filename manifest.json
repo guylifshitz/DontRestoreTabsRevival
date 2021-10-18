@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "DontRestoreTabsRevival",
-    "version": "0.13",
+    "version": "0.14",
     "description": "This is a remake of the DontRestoreTabs extension. It is compatible with Thunderbird 68+. The code is based on the tabControl extension.",
     "author": "Max Cohen and Guy Lifshitz",
     "homepage_url": "https://github.com/guylifshitz/DontRestoreTabsRevival/",
